@@ -54,19 +54,57 @@ public class WikiCrawler {
 	 * @throws IOException
 	 */
 	public String crawl(boolean testing) throws IOException {
-        // FILL THIS IN!
-		return null;
+        //didn't index a page
+        if(queue.isEmpty()){
+            return null;
+        }
+        //get the next url from the queue
+        String url = queue.poll();
+        
+        //makes sure the url hasn't been indexed
+        if(testing == false && index.isIndexed(url)){
+            return null;
+        }
+        
+        Elements paragraph;
+        if(testing){//get the contents of the url from the file
+            paragraph = wf.readWikipedia(url);
+        }else{//get the contents from the web
+            paragraph = wf.fetchWikipedia(url);
+        }
+        
+        //index the page
+        index.indexPage(url, paragraph);
+        
+        //add all other internal links to the queue
+        queueInternalLinks(paragraph);
+        
+        //return the url that was indexed
+        return url;
 	}
-	
-	/**
-	 * Parses paragraphs and adds internal links to the queue.
-	 * 
-	 * @param paragraphs
-	 */
-	// NOTE: absence of access level modifier means package-level
-	void queueInternalLinks(Elements paragraphs) {
-        // FILL THIS IN!
-	}
+    
+    /**
+     * Parses paragraphs and adds internal links to the queue.
+     *
+     * @param paragraphs
+     */
+    // NOTE: absence of access level modifier means package-level
+    void queueInternalLinks(Elements paragraphs) {
+        String url;
+        Elements urlLinks;
+        for (Element paragraph : paragraphs)
+        {
+            urlLinks = paragraph.select("a[href]");
+            
+            //if it's an internal link it adds it to the queue
+            for (Element link : urlLinks)
+            {
+                url = link.attr("href");
+                if (url.startsWith("/wiki/"))
+                    queue.add("https://en.wikipedia.org" + url);
+            }
+        }
+    }
 
 	public static void main(String[] args) throws IOException {
 		
